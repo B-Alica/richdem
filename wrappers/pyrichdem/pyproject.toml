@@ -27,6 +27,9 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
+[tool.poetry.build]
+script = "build.py"
+
 [project.scripts]
 rd_depression_filling = "richdem.cli:DepressionFilling"
 rd_breach_depressions = "richdem.cli:BreachDepressions"
@@ -38,4 +41,5 @@ rd_compare = "richdem.cli:RdCompare"
 [tool.poetry.group.dev.dependencies]
 wheel = "^0.45.1"
 build = "^1.2.2.post1"
+auditwheel = "^6.3.0"
 
