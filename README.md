@@ -61,7 +61,7 @@ A typical academic citation might read as follows:
 
 
 
-Compilation
+Compilation (as a C++ library)
 -----------
 
 To compile, first acquire the source code:
@@ -104,17 +104,23 @@ As A Python Package
 
 ### From source
 
-After installing the *richdem* library (as described above), you can build
-*richdem* as a Python package. To do this, you will of course need Python
-(3.7+), which you can install with *conda*,
+You can build *richdem* as a Python package (without the need to compile the C++ library).
+
+To do this, you will of course need Python (3.10+), which you can install with *conda*,
 
     $ conda install python
+
+You will also need poetry (1.1.0+) which can also be installed [using conda](https://anaconda.org/conda-forge/poetry).
 
 You can now build the *richdem* Python package,
 
     $ cd wrappers/pyrichdem
-    $ pip install pybind11
-    $ python3 setup.py install --user
+    $ poetry install
+    $ poetry build
+
+You will then acquire a built os-dependent wheel and tar.gz files stored in `/wrappers/pyrichdem/dist`.
+
+You can then use the wheel file to install the package wherever you want using classical pip commands.
 
 ### From conda
 
