@@ -84,7 +84,11 @@ Then compile using the standard `cmake` sequence:
     $ make -j 6    # Adjust to use more or fewer processors
 
 If you do not want to build *richdem* with *gdal*, use the `-DUSE_GDAL=OFF`
-option. To install *richdem*:
+option.
+Note that richdem as a python version can use *rasterio* as an optional dependency
+instead of *gdal* ; this may be easier to install.
+
+To install *richdem*:
 
     $ cmake --install . --prefix /my/install/prefix
 
@@ -142,6 +146,10 @@ commands into a cell and running it.
 Get the package with:
 
     $ pip install richdem
+
+To install with rasterio, use the following instead:
+
+    $ pip install richdem[rasterio]
 
 And use:
 
