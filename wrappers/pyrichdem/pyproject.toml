@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=78", "wheel>0.45", "pybind11>=2.13,<3", "numpy>2.2"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=78", "wheel>0.45", "pybind11>=2.13,<3", "numpy>2.2", "poetry-core>=1.1.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "richdem"
@@ -29,6 +29,7 @@ classifiers = [
 
 [tool.poetry.build]
 script = "build.py"
+generate-setup-file = true
 
 [project.scripts]
 rd_depression_filling = "richdem.cli:DepressionFilling"
@@ -42,4 +43,3 @@ rd_compare = "richdem.cli:RdCompare"
 wheel = "^0.45.1"
 build = "^1.2.2.post1"
 auditwheel = "^6.3.0"
-
