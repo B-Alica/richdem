@@ -4,6 +4,7 @@
 #include <richdem/methods/flow_accumulation.hpp>
 #include <richdem/depressions/depression_hierarchy.hpp>
 #include <richdem/depressions/fill_spill_merge.hpp>
+#include <richdem/common/Array2D.hpp>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -11,10 +12,36 @@
 #include <pybind11/stl.h>
 
 #include <string>
+#include <unordered_set>
+#include <string>
 
 namespace py = pybind11;
 
 using namespace richdem;
+
+// Déclarez un ensemble pour suivre les types enregistrés
+std::unordered_set<std::string> registered_types;
+
+template <typename T>
+void CustomTemplatedFunctionsWrapper(py::module &m, const std::string &type_name) {
+    // Vérifiez si le type a déjà été enregistré
+    if (registered_types.find(type_name) == registered_types.end()) {
+        registered_types.insert(type_name);
+
+        // Enregistrez le type ici
+        TemplatedFunctionsWrapper<T>(m, type_name);
+    }
+}
+
+template <typename T>
+void CustomTemplatedArrayWrapper(py::module &m, const std::string &type_name) {
+    // Vérifiez si le type a déjà été enregistré
+    if (registered_types.find(type_name) == registered_types.end()) {
+        registered_types.insert(type_name);
+
+        TemplatedArrayWrapper<T>(m, type_name);
+    }
+}
 
 PYBIND11_MODULE(_richdem, m) {
   m.doc() = "Internal library used by pyRichDEM for calculations";
@@ -24,27 +51,27 @@ PYBIND11_MODULE(_richdem, m) {
   //py::bind_vector<std::vector<double>>(m, "VecDouble");
   py::bind_map<std::map<std::string, std::string>>(m, "MapStringString");
 
-  TemplatedFunctionsWrapper<float   >(m, "float"   );
-  TemplatedFunctionsWrapper<double  >(m, "double"  );
-  TemplatedFunctionsWrapper<int8_t  >(m, "int8_t"  );
-  TemplatedFunctionsWrapper<int16_t >(m, "int16_t" );
-  TemplatedFunctionsWrapper<int32_t >(m, "int32_t" );
-  TemplatedFunctionsWrapper<int64_t >(m, "int64_t" );
-  TemplatedFunctionsWrapper<uint8_t >(m, "uint8_t" );
-  TemplatedFunctionsWrapper<uint16_t>(m, "uint16_t");
-  TemplatedFunctionsWrapper<uint32_t>(m, "uint32_t");
-  TemplatedFunctionsWrapper<uint64_t>(m, "uint64_t");
+  CustomTemplatedFunctionsWrapper<float   >(m, "float"   );
+  CustomTemplatedFunctionsWrapper<double  >(m, "double"  );
+  CustomTemplatedFunctionsWrapper<int8_t  >(m, "int8_t"  );
+  CustomTemplatedFunctionsWrapper<int16_t >(m, "int16_t" );
+  CustomTemplatedFunctionsWrapper<int32_t >(m, "int32_t" );
+  CustomTemplatedFunctionsWrapper<int64_t >(m, "int64_t" );
+  CustomTemplatedFunctionsWrapper<uint8_t >(m, "uint8_t" );
+  CustomTemplatedFunctionsWrapper<uint16_t>(m, "uint16_t");
+  CustomTemplatedFunctionsWrapper<uint32_t>(m, "uint32_t");
+  CustomTemplatedFunctionsWrapper<uint64_t>(m, "uint64_t");
 
-  TemplatedArrayWrapper<float   >(m, "float"   );
-  TemplatedArrayWrapper<double  >(m, "double"  );
-  TemplatedArrayWrapper<int8_t  >(m, "int8_t"  );
-  TemplatedArrayWrapper<int16_t >(m, "int16_t" );
-  TemplatedArrayWrapper<int32_t >(m, "int32_t" );
-  TemplatedArrayWrapper<int64_t >(m, "int64_t" );
-  TemplatedArrayWrapper<uint8_t >(m, "uint8_t" );
-  TemplatedArrayWrapper<uint16_t>(m, "uint16_t");
-  TemplatedArrayWrapper<uint32_t>(m, "uint32_t");
-  TemplatedArrayWrapper<uint64_t>(m, "uint64_t");
+  CustomTemplatedArrayWrapper<float   >(m, "float"   );
+  CustomTemplatedArrayWrapper<double  >(m, "double"  );
+  CustomTemplatedArrayWrapper<int8_t  >(m, "int8_t"  );
+  CustomTemplatedArrayWrapper<int16_t >(m, "int16_t" );
+  CustomTemplatedArrayWrapper<int32_t >(m, "int32_t" );
+  CustomTemplatedArrayWrapper<int64_t >(m, "int64_t" );
+  CustomTemplatedArrayWrapper<uint8_t >(m, "uint8_t" );
+  CustomTemplatedArrayWrapper<uint16_t>(m, "uint16_t");
+  CustomTemplatedArrayWrapper<uint32_t>(m, "uint32_t");
+  CustomTemplatedArrayWrapper<uint64_t>(m, "uint64_t");
 
   m.def("rdHash",        &rdHash,        "Git hash of previous commit");
   m.def("rdCompileTime", &rdCompileTime, "Commit time of previous commit");
@@ -138,7 +165,31 @@ PYBIND11_MODULE(_richdem, m) {
         }
       );
 
+  // Enregistrer la classe Array2D
+  py::class_<Array2D<double>>(m, "Array2D")
+    .def(py::init<>())
+    .def(py::init<Array2D<double>::xy_t, Array2D<double>::xy_t>(), "Create a 2D array with specified width and height")
+    .def("width", &Array2D<double>::width, "Get the width of the array")
+    .def("height", &Array2D<double>::height, "Get the height of the array")
+    .def("clear", &Array2D<double>::clear, "Clear the array")
+    .def("loadData", &Array2D<double>::loadData, "Load data into the array")
+    .def("saveToCache", &Array2D<double>::saveToCache, "Save the array to cache")
+    .def("dumpData", &Array2D<double>::dumpData, "Dump the array data")
+    .def("setNoData", &Array2D<double>::setNoData, "Set the NoData value")
+    .def("noData", &Array2D<double>::noData, "Get the NoData value")
+    .def("__getitem__", [](Array2D<double>& self, std::pair<Array2D<double>::xy_t, Array2D<double>::xy_t> indices) -> double& {
+        return self(indices.first, indices.second);
+    }, "Get the value at the specified indices")
+    .def("__setitem__", [](Array2D<double>& self, std::pair<Array2D<double>::xy_t, Array2D<double>::xy_t> indices, double value) {
+        self(indices.first, indices.second) = value;
+    }, "Set the value at the specified indices");
+
   // m.def("generate_perlin_terrain", &richdem::generate_perlin_terrain, "Generate random terrain using perlin noise", py::arg("array"), py::arg("seed"));
+
+  // Définir la fonction generate_perlin_terrain avec des lambdas pour la conversion de types
+  m.def("generate_perlin_terrain", [](Array2D<double>& array, uint32_t seed) {
+      richdem::generate_perlin_terrain(array, seed);
+  }, "Generate random terrain using perlin noise", py::arg("array"), py::arg("seed"));
 
   py::module_ dephier_module = m.def_submodule("depression_hierarchy", "Depression Hierarchies");
 
