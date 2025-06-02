@@ -717,7 +717,7 @@ class Array2D {
   }
 
   /**
-    @brief Whether or not a cell is NoData using x,y coordinates
+    @brief Whether or not a cell is Data using x,y coordinates
 
     @param[in]  x   X-coordinate of cell to test
     @param[in]  y   Y-coordinate of cell to test
@@ -731,7 +731,7 @@ class Array2D {
   }
 
   /**
-    @brief Whether or not a cell is NoData using i coordinates
+    @brief Whether or not a cell is Data using i coordinates
 
     @param[in]  i   i-coordinate of cell to test
 
@@ -1422,8 +1422,8 @@ class Array2D {
   }
 
   /**
-    @brief Get the length of a cell along the raster's horizontal axis
-    @return The length of the cell along the raster's horizontal axis
+    @brief Get the length of a cell along the raster's vertical axis
+    @return The length of the cell along the raster's vertical axis
   */
   double getCellLengthY() const {
     assert(geotransform.size()>0);
