@@ -19,23 +19,22 @@ namespace py = pybind11;
 
 using namespace richdem;
 
-// Déclarez un ensemble pour suivre les types enregistrés
+// In order to not register the same type multiple times
 std::unordered_set<std::string> registered_types;
 
 template <typename T>
 void CustomTemplatedFunctionsWrapper(py::module &m, const std::string &type_name) {
-    // Vérifiez si le type a déjà été enregistré
+    // Check if type is already register
     if (registered_types.find(type_name) == registered_types.end()) {
         registered_types.insert(type_name);
 
-        // Enregistrez le type ici
         TemplatedFunctionsWrapper<T>(m, type_name);
     }
 }
 
 template <typename T>
 void CustomTemplatedArrayWrapper(py::module &m, const std::string &type_name) {
-    // Vérifiez si le type a déjà été enregistré
+    // Check if type is already register
     if (registered_types.find(type_name) == registered_types.end()) {
         registered_types.insert(type_name);
 
@@ -43,31 +42,31 @@ void CustomTemplatedArrayWrapper(py::module &m, const std::string &type_name) {
     }
 }
 
-// Fonction template pour exposer Array2D<T>
+// Template function to expose Array2D
 template <typename T>
 void exposeArray2D(py::module &m, const std::string &type_name) {
     using ClassName = Array2D<T>;
 
     py::class_<ClassName>(m, ("Array2D_" + type_name).c_str())
-        // Constructeurs
+        // Constructors
         .def(py::init<>())
         .def(py::init<typename ClassName::xy_t, typename ClassName::xy_t>(), "Create a 2D array with specified width and height")
         .def(py::init([](py::array_t<T> array) {
-            // Obtenez les informations du buffer du tableau NumPy
+            // Get the info of the numpy array
             py::buffer_info buf = array.request();
             if (buf.ndim != 2) {
                 throw std::runtime_error("Number of dimensions must be 2");
             }
 
-            // Obtenez les dimensions du tableau
+            // Get the array shape
             typename ClassName::xy_t width = buf.shape[1];
             typename ClassName::xy_t height = buf.shape[0];
 
-            // Créez un nouvel Array2D en utilisant le constructeur approprié
+            // Create a Array2D
             return new ClassName(static_cast<T*>(buf.ptr), width, height);
         }), "Create a 2D array from a NumPy array")
 
-        // Méthodes
+        // Methods
         .def("size", &ClassName::size, "Number of cells in the DEM")
         .def("width", &ClassName::width, "Get the width of the array")
         .def("height", &ClassName::height, "Get the height of the array")
@@ -77,9 +76,8 @@ void exposeArray2D(py::module &m, const std::string &type_name) {
         .def("noData", &ClassName::noData, "Get the no_data value")
         .def("setNoData", &ClassName::setNoData, "Set the NoData value")
 
-        // Exposer l'attribut geotransform de la classe Array2D
-        // Getter, puis
-        // Setter
+        // Properity to expose the Array2D geotransform attribute
+        // Getter then setter
         .def_property("geotransform",
             [](ClassName &self) {
                 return py::array_t<double>(self.geotransform.size(), self.geotransform.data());
@@ -93,10 +91,6 @@ void exposeArray2D(py::module &m, const std::string &type_name) {
                 // Assignez tous les éléments au vecteur geotransform
                 self.geotransform.assign(ptr, ptr + buf.size);
             })
-
-        // .def_property("noData",
-        //     &ClassName::noData,
-        //     &ClassName::setNoData)
 
         .def("__getitem__", [](ClassName &self, std::pair<typename ClassName::xy_t, typename ClassName::xy_t> indices) -> T& {
             return self(indices.first, indices.second);
@@ -228,133 +222,7 @@ PYBIND11_MODULE(_richdem, m) {
         }
       );
 
-  // Enregistrer la classe Array2D
-  // py::class_<Array2D<double>>(m, "Array2D")
-  //   // Constructeurs
-  //   .def(py::init<>())
-  //   .def(py::init<Array2D<double>::xy_t, Array2D<double>::xy_t>(), "Create a 2D array with specified width and height")
-    
-  //   // Semblent fonctionner
-  //   .def("size", &Array2D<double>::size, "Number of cells in the DEM")
-  //   .def("width", &Array2D<double>::width, "Get the width of the array")
-  //   .def("height", &Array2D<double>::height, "Get the height of the array")
-  //   // .def("viewXoff", &Array2D<double>::viewXoff, "X-Offset of this subregion of whatever raster we loaded from")
-  //   // .def("viewYoff", &Array2D<double>::viewYoff, "Y-Offset of this subregion of whatever raster we loaded from")
-  //   .def("empty", &Array2D<double>::empty, "Returns TRUE if no data is present in RAM")
-  //   .def("min", &Array2D<double>::min, "Finds the minimum value of the raster, ignoring NoData cells")
-  //   .def("max", &Array2D<double>::max, "Finds the maximum value of the raster, ignoring NoData cells")
-  //   // .def("countval", &Array2D<double>::countval, "Counts the number of occurrences of a particular value in the raster. Can operate on NoData cells.")
-  //   // .def("iToxy", &Array2D<double>::iToxy, "Convert from index coordinates to x,y coordinates")
-  //   // .def("xyToI", &Array2D<double>::xyToI, "Convert from x,y coordinates to index coordinates")
-  //   // .def("nToI", &Array2D<double>::nToI, "Given a cell identified by an i-coordinate, return the i-coordinate of the neighbour identified by dx,dy")
-  //   // .def("isEquivalent", &Array2D<double>::operator==, "Determine if two rasters are equivalent based on dimensions, NoData value, and their data")
-  //   // .def("isNoData", [](Array2D<double>& self, Array2D<double>::xy_t x, Array2D<double>::xy_t y) -> bool {
-  //   //     return self.isNoData(x, y);
-  //   // }, "Check if a cell is NoData using x, y coordinates")
-  //   // .def("isNoData", [](Array2D<double>& self, Array2D<double>::i_t i) -> bool {
-  //   //     return self.isNoData(i);
-  //   // }, "Check if a cell is NoData using i coordinate")
-  //   // .def("isData", [](Array2D<double>& self, Array2D<double>::xy_t x, Array2D<double>::xy_t y) -> bool {
-  //   //     return self.isData(x, y);
-  //   // }, "Check if a cell is Data using x, y coordinates")
-  //   // .def("isData", [](Array2D<double>& self, Array2D<double>::i_t i) -> bool {
-  //   //     return self.isData(i);
-  //   // }, "Check if a cell is Data using i coordinate")
-  //   // .def("flipVert", &Array2D<double>::flipVert, "Flips the raster from top to bottom")
-  //   // .def("inGrid", &Array2D<double>::inGrid, "Test whether a cell lies within the boundaries of the raster")
-  //   // .def("isEdgeCell", [](Array2D<double>& self, Array2D<double>::xy_t x, Array2D<double>::xy_t y) -> bool {
-  //   //     return self.isEdgeCell(x, y);
-  //   // }, "Test whether a cell lies on the boundary of the raster, using x, y coordinates")
-  //   // .def("isEdgeCell", [](Array2D<double>& self, Array2D<double>::i_t i) -> bool {
-  //   //     return self.isEdgeCell(i);
-  //   // }, "Test whether a cell lies on the boundary of the raster, using i coordinate")
-  //   // .def("isTopLeft", &Array2D<double>::isTopLeft, "Determines whether an (x,y) pair is the top left of the DEM")
-  //   // .def("isTopRight", &Array2D<double>::isTopRight, "Determines whether an (x,y) pair is the top right of the DEM")
-  //   // .def("isBottomLeft", &Array2D<double>::isBottomLeft, "Determines whether an (x,y) pair is the bottom left of the DEM")
-  //   // .def("isBottomRight", &Array2D<double>::isBottomRight, "Determines whether an (x,y) pair is the bottom right of the DEM")
-  //   // .def("isTopRow", &Array2D<double>::isTopRow, "Determines whether an (x,y) pair is in the top row of the DEM")
-  //   // .def("isBottomRow", &Array2D<double>::isBottomRow, "Determines whether an (x,y) pair is in the bottom row of the DEM")
-  //   // .def("isLeftCol", &Array2D<double>::isLeftCol, "Determines whether an (x,y) pair is in the left column of the DEM")
-  //   // .def("isRightCol", &Array2D<double>::isRightCol, "Determines whether an (x,y) pair is in the right column of the DEM")
-  //   // .def("setAll", &Array2D<double>::setAll, "Sets all of the raster's cells to 'val'")
-  //   // .def("resize", [](Array2D<double>& self,  Array2D<double>::xy_t width0,  Array2D<double>::xy_t height0, const double& val0 = double()) {
-  //   //     self.resize(width0, height0, val0);
-  //   // }, "Resize the raster. Note: this clears all the raster's data.")
-  //   // .def("resize", [](Array2D<double>& self, const Array2D<double>& other, const double& val = double()) {
-  //   //     self.resize(other, val);
-  //   // }, "Resize a raster to copy another raster's dimensions. Copy properties.")
-  //   // .def("expand", &Array2D<double>::expand, "Makes a raster larger and retains the raster's old data, similar to resize. Note: Using this command requires RAM equal to the sum of the old raster and the new raster. The old raster is placed in the upper-left of the new raster.")
-  //   // .def("numDataCells", &Array2D<double>::numDataCells, "Returns the number of cells which are not NoData. May count them.")
-  //   // .def("getCellValue", [](const Array2D<double>& self, Array2D<double>::xy_t x, Array2D<double>::xy_t y) -> double {
-  //   //     return self.operator()(x, y);
-  //   // }, "Return cell value based on x,y coordinates")
-  //   // .def("getCellValue", [](const Array2D<double>& self, Array2D<double>::i_t i) -> double {
-  //   //     return self.operator()(i);
-  //   // }, "Return cell value based on i-coordinate")
-  //   // .def("topRow", &Array2D<double>::topRow, "Returns a copy of the top row of the raster")
-  //   // .def("bottomRow", &Array2D<double>::bottomRow, "Returns a copy of the bottom row of the raster")
-  //   // .def("leftColumn", &Array2D<double>::leftColumn, "Returns a copy of the left column of the raster")
-  //   // .def("rightColumn", &Array2D<double>::rightColumn, "Returns a copy of the right column of the raster")
-  //   // .def("setRow", &Array2D<double>::setRow, "Sets an entire row of a raster to a given value.")
-  //   // .def("setCol", &Array2D<double>::setCol, "Sets an entire column of a raster to a given value.")
-  //   // .def("setEdges", &Array2D<double>::setEdges, "Sets the edges of the array to a given value.")
-  //   // .def("getRowData", &Array2D<double>::getRowData, "Returns a copy of an arbitrary row of the raster")
-  //   // .def("getColData", &Array2D<double>::getColData, "Returns a copy of an arbitrary column of the raster")
-  //   .def("printAll", [](const Array2D<double>& self) {
-  //       self.printAll();
-  //   }, "Prints the entire array with default parameters")
-  //   .def("printAll", [](const Array2D<double>& self, const std::string& msg) {
-  //       self.printAll(msg);
-  //   }, "Prints the entire array with a custom message")
-  //   .def("printAll", [](const Array2D<double>& self, const std::string& msg, int fwidth) {
-  //       self.printAll(msg, fwidth);
-  //   }, "Prints the entire array with a custom message and field width")
-  //   .def("printAll", [](const Array2D<double>& self, const std::string& msg, int fwidth, int precision) {
-  //       self.printAll(msg, fwidth, precision);
-  //   }, "Prints the entire array with a custom message, field width, and precision")
-  //   .def("printAllIndices", &Array2D<double>::printAllIndices, "Prints the flat indices of the entire array")
-    
-  //   // Ne renvoie pas d'erreur, mais renvoie "Segmentation fault" lorsqu'on cherche à accéder à une valeur
-  //   // Par exemple en faisant `array.min()
-  //   // .def("clear", &Array2D<double>::clear, "Clear the array")
-
-  //   // Ne renvoie pas d'erreur. Si je remplace le max par une autre valeur et que je fais array.max(), j'obtiens
-  //   // bien la nouvelle valeur, mais lorsque je fais array.printAll() rien n'a été remplacé
-  //   // .def("replace", &Array2D<double>::replace, "Replace one cell value with another throughout the raster. Can operate on NoData cells.")
-    
-  //   // A tester
-  //   // .def("loadData", &Array2D<double>::loadData, "Load data into the array")
-  //   // .def("saveToCache", [](Array2D<double>& self, const std::string& cache_filename) {
-  //   //     self.saveToCache(cache_filename);
-  //   // }, "Save the array to cache")
-  //   // .def("dumpData", &Array2D<double>::dumpData, "Dump the array data")
-  //   // .def("setNoData", &Array2D<double>::setNoData, "Set the NoData value")
-  //   // .def("noData", &Array2D<double>::noData, "Get the NoData value")
-  //   // .def("getN", &Array2D<double>::getN, "Given a cell identified by an i-coordinate, return the i-coordinate of the neighbour identified by n")
-  //   // .def("nshift", &Array2D<double>::nshift, "Return the offset of the neighbour cell identified by n")
-  //   // .def("flipHorz", &Array2D<double>::flipHorz, "Flips the raster from side-to-side")
-  //   // .def("transpose", &Array2D<double>::transpose, "Flips the raster about its diagonal axis, like a matrix tranpose.")
-  //   // .def("templateCopy", [](Array2D<double>& self, const Array2D<double>& other) {
-  //   //     self.templateCopy(other);
-  //   // }, "Copies the geotransform, projection, and basename of another raster")
-  //   // .def("printAllFlows", &Array2D<double>::printAllFlows, "Prints the entire array as flow directions")
-  //   // .def("printBlockIndices", &Array2D<double>::printBlockIndices, "Prints a square of cells centered at x,y indicating the index of each")
-  //   // .def("getCellArea", &Array2D<double>::getCellArea, "Get the area of an individual cell in square projection units")
-  //   // .def("getCellLengthX", &Array2D<double>::getCellLengthX, "Get the length of a cell along the raster's horizontal axis")
-  //   // .def("getCellLengthY", &Array2D<double>::getCellLengthY, "Get the length of a cell along the raster's vertical axis")
-  //   // .def("scale", &Array2D<double>::scale, "Multiplies the entire array by a scalar")
-  //   // .def("owned", &Array2D<double>::owned)
-
-  //   .def("__getitem__", [](Array2D<double>& self, std::pair<Array2D<double>::xy_t, Array2D<double>::xy_t> indices) -> double& {
-  //       return self(indices.first, indices.second);
-  //   }, "Get the value at the specified indices")
-  //   .def("__setitem__", [](Array2D<double>& self, std::pair<Array2D<double>::xy_t, Array2D<double>::xy_t> indices, double value) {
-  //       self(indices.first, indices.second) = value;
-  //   }, "Set the value at the specified indices");
-
-  // m.def("generate_perlin_terrain", &richdem::generate_perlin_terrain, "Generate random terrain using perlin noise", py::arg("array"), py::arg("seed"));
-
-  // Exposer Array2D pour différents types
+  // Expose Array2D for different types
   exposeArray2D<int8_t>(m, "int8_t");
   exposeArray2D<int16_t>(m, "int16_t");
   exposeArray2D<int32_t>(m, "int32_t");
@@ -366,17 +234,10 @@ PYBIND11_MODULE(_richdem, m) {
   exposeArray2D<float>(m, "float");
   exposeArray2D<double>(m, "double");
 
-  // Définir la fonction generate_perlin_terrain avec des lambdas pour la conversion de types
-  // La version qui prend un Array2D et une seed
+  // Expose generate_perlin_terrain using and array and a seed
   m.def("generate_perlin_terrain", [](Array2D<double>& array, uint32_t seed) {
       return richdem::generate_perlin_terrain(array, seed);
   }, "Generate random terrain using perlin noise", py::arg("array"), py::arg("seed"));
-
-  // Définir la fonction generate_perlin_terrain avec des lambdas pour la conversion de types
-  // La version qui prend une size et une seed
-  // m.def("generate_perlin_terrain", [](uint32_t size, uint32_t seed) {
-  //     return richdem::generate_perlin_terrain(size, seed);
-  // }, "Generate random terrain using perlin noise", py::arg("size"), py::arg("seed"));
 
   py::module_ dephier_module = m.def_submodule("depression_hierarchy", "Depression Hierarchies");
 
