@@ -74,7 +74,30 @@ void exposeArray2D(py::module &m, const std::string &type_name) {
         .def("empty", &ClassName::empty, "Returns TRUE if no data is present in RAM")
         .def("min", &ClassName::min, "Finds the minimum value of the raster, ignoring NoData cells")
         .def("max", &ClassName::max, "Finds the maximum value of the raster, ignoring NoData cells")
+        .def("noData", &ClassName::noData, "Get the no_data value")
         .def("setNoData", &ClassName::setNoData, "Set the NoData value")
+
+        // Exposer l'attribut geotransform de la classe Array2D
+        // Getter, puis
+        // Setter
+        .def_property("geotransform",
+            [](ClassName &self) {
+                return py::array_t<double>(self.geotransform.size(), self.geotransform.data());
+            },
+            [](ClassName &self, py::array_t<double> array) {
+                py::buffer_info buf = array.request();
+
+                // Obtenez un pointeur vers les données du tableau
+                double* ptr = static_cast<double*>(buf.ptr);
+
+                // Assignez tous les éléments au vecteur geotransform
+                self.geotransform.assign(ptr, ptr + buf.size);
+            })
+
+        // .def_property("noData",
+        //     &ClassName::noData,
+        //     &ClassName::setNoData)
+
         .def("__getitem__", [](ClassName &self, std::pair<typename ClassName::xy_t, typename ClassName::xy_t> indices) -> T& {
             return self(indices.first, indices.second);
         }, "Get the value at the specified indices")
